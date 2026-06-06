@@ -50,6 +50,7 @@ class EveStagingFinder:
                     "Staging System": staging_sys['solarSystemName'],
                     "Security": round(staging_sys['security'], 1),
                     "NPC Station": staging_sys['hasNPCStation'],
+                    "Pochven": " 🔻 pochven 🔻" if staging_sys['isPochven'] else "",
                     "Targets Covered": reachable_count,
                     "Distances": ", ".join(dist_details)
                 })
@@ -86,7 +87,10 @@ def load_sde_data():
             else:
                 df['hasNPCStation'] = False
             
-            return df[['solarSystemName', 'x', 'y', 'z', 'security', 'hasNPCStation']]
+            # Identify Pochven systems (Region ID 10000070)
+            df['isPochven'] = df['regionID'] == 10000070
+            
+            return df[['solarSystemName', 'x', 'y', 'z', 'security', 'hasNPCStation', 'isPochven']]
         except Exception as e:
             st.error(f"Error parsing SDE file: {e}")
             return None
@@ -117,30 +121,38 @@ def main():
     
     ignore_hs = st.sidebar.checkbox("Ignore Highsec Systems (>= 0.5)", value=True)
 
-    target_input = st.text_input("Enter Target Systems (comma separated):", placeholder="NOL-M9, 1DQ1-A, Jita")
-    target_list = [x.strip() for x in target_input.split(",") if x.strip()]
-
     sde = load_sde_data()
     if sde is None:
         st.error(f"Could not find 'mapSolarSystems.jsonl' in {Path(__file__).parent}")
         st.stop()
 
-    finder = EveStagingFinder(sde)
+    # Prepare the list of all systems for autofill
+    all_system_names = sorted(sde['solarSystemName'].astype(str).unique().tolist())
+
+    # Move input to a more prominent container
+    st.sidebar.divider()
+    st.sidebar.header("Station Filters")
+    require_npc = st.sidebar.checkbox("Must have NPC Station", value=False)
+
+    target_list = st.multiselect(
+        "Select Target Systems:",
+        options=all_system_names,
+        placeholder="Type to search for systems (e.g. NOL-M9, 1DQ1-A, Jita)..."
+    )
 
     if target_list:
-        found_mask = sde['solarSystemName'].str.lower().isin([t.lower() for t in target_list])
-        found_names = sde[found_mask]['solarSystemName'].tolist()
-        missing = [t for t in target_list if t.lower() not in [f.lower() for f in found_names]]
-        
-        if missing:
-            st.warning(f"Systems not found in SDE: {', '.join(missing)}")
+        # Filter data based on NPC requirement before searching
+        search_sde = sde.copy()
+        if require_npc:
+            search_sde = search_sde[search_sde['hasNPCStation'] == True]
 
+        finder = EveStagingFinder(search_sde)
         results = finder.find_best_staging(target_list, jump_range, ignore_hs)
         
         if results:
             # Dashboard Metrics
             m1, m2, m3 = st.columns(3)
-            m1.metric("Targets Found", len(found_names))
+            m1.metric("Targets Input", len(target_list))
             m2.metric("Max Coverage", f"{results[0]['Targets Covered']} Systems")
             m3.metric("Jump Range", f"{jump_range} LY")
 
@@ -149,12 +161,13 @@ def main():
             
             df_results = pd.DataFrame(results)
             st.dataframe(
-                df_results[['Staging System', 'Security', 'NPC Station', 'Targets Covered', 'Distances']],
+                df_results[['Staging System', 'Security', 'NPC Station', 'Pochven', 'Targets Covered', 'Distances']],
                 use_container_width=True,
                 height=600,
                 column_config={
                     "Security": st.column_config.NumberColumn("Sec", format="%.1f"),
                     "NPC Station": st.column_config.CheckboxColumn("NPC Station"),
+                    "Pochven": st.column_config.TextColumn("Pochven"),
                     "Targets Covered": st.column_config.ProgressColumn(
                         "Coverage", 
                         min_value=0, 
