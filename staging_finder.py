@@ -46,11 +46,15 @@ class EveStagingFinder:
             if reachable_count > 0:
                 staging_sys = potential_staging.iloc[i]
                 dist_details = [f"{target_names[j]} - {round(dists_ly[j], 2)} LY" for j in range(len(mask)) if mask[j]]
+                
+                staging_name = staging_sys['solarSystemName']
+                if staging_sys['isPochven']:
+                    staging_name = f"{staging_name} 🔻 pochven 🔻"
+
                 results.append({
-                    "Staging System": staging_sys['solarSystemName'],
+                    "Staging System": staging_name,
                     "Security": round(staging_sys['security'], 1),
                     "NPC Station": staging_sys['hasNPCStation'],
-                    "Pochven": " 🔻 pochven 🔻" if staging_sys['isPochven'] else "",
                     "Targets Covered": reachable_count,
                     "Distances": ", ".join(dist_details)
                 })
@@ -161,13 +165,12 @@ def main():
             
             df_results = pd.DataFrame(results)
             st.dataframe(
-                df_results[['Staging System', 'Security', 'NPC Station', 'Pochven', 'Targets Covered', 'Distances']],
+                df_results[['Staging System', 'Security', 'NPC Station', 'Targets Covered', 'Distances']],
                 use_container_width=True,
                 height=600,
                 column_config={
                     "Security": st.column_config.NumberColumn("Sec", format="%.1f"),
                     "NPC Station": st.column_config.CheckboxColumn("NPC Station"),
-                    "Pochven": st.column_config.TextColumn("Pochven"),
                     "Targets Covered": st.column_config.ProgressColumn(
                         "Coverage", 
                         min_value=0, 
