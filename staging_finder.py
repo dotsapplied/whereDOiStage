@@ -171,13 +171,13 @@ def main():
                     "Targets Covered": st.column_config.ProgressColumn(
                         "Coverage", 
                         min_value=0, 
-                        max_value=len(found_names),
+                        max_value=len(target_list),
                         format="%d systems"
                     ),
                     "Distances": st.column_config.TextColumn("Target Distances")
                 }
             )
-        elif found_names:
+        else:
             st.warning("No staging systems found within that range for the given targets.")
     else:
         st.info("💡 Enter system names above (e.g., 1DQ1-A, NOL-M9) to find the best central staging point.")
