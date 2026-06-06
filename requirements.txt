@@ -1,0 +1,5 @@
+pandas
+streamlit
+numpy
+
+streamlit run c:\Users\Korisnik\Desktop\YES\staging_finder.py
