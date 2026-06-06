@@ -106,10 +106,14 @@ def main():
     # Custom CSS for a modern "EVE" look
     st.markdown("""
         <style>
-        .main { background-color: #0e1117; }
-        .stMetric { background-color: #161b22; padding: 15px; border-radius: 10px; border: 1px solid #30363d; }
-        [data-testid="stSidebar"] { background-color: #161b22; }
+        .main { background-color: #0e1117; color: #fafafa; }
+        .stMetric { background-color: #161b22; padding: 15px; border-radius: 10px; border: 1px solid #30363d; color: #fafafa; }
+        [data-testid="stSidebar"] { background-color: #161b22; color: #fafafa; }
         .stDataFrame { border: 1px solid #30363d; border-radius: 10px; }
+        /* Force high contrast for text elements to prevent visibility issues in Light/Dark mode */
+        h1, h2, h3, h4, h5, h6, p, label, .stCaption, [data-testid="stMetricValue"], [data-testid="stMetricLabel"] {
+            color: #fafafa !important;
+        }
         </style>
     """, unsafe_allow_html=True)
 
